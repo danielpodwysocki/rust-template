@@ -68,6 +68,14 @@ tasks:
     cmds:
       - cargo nextest run
 
+  coverage:
+    desc: Enforce 100% line coverage on crates/shared/src/services (fails if any line uncovered)
+    cmds:
+      - cargo llvm-cov nextest
+          --package shared
+          --include-pattern 'crates/shared/src/services'
+          --fail-under-lines 100
+
   lint:
     desc: Run clippy and check formatting
     cmds:

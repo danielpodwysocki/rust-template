@@ -21,6 +21,7 @@
               rustup
               rust-analyzer
               cargo-nextest
+              cargo-llvm-cov
               cargo-watch
               k9s
               go-task

@@ -30,10 +30,10 @@ The workspace layout looks as follows:
     - `src/main.rs` - entry point, clap setup
 - `tests/` - integration tests (one file per program under test)
 
-**The rule for placement:**
-- If logic or data access could ever be used by more than one program → put it in `crates/shared/`
-- If it is strictly specific to one program's transport layer (HTTP handlers, CLI argument parsing) → put it in that program's crate
-- When in doubt, put it in `crates/shared/`
+**The rule for placement — no exceptions:**
+- Services and repositories **always** go in `crates/shared/`, regardless of whether they are currently used by more than one program
+- Individual program crates contain **only** transport-layer code: HTTP handlers, axum routers, CLI argument structs, `Config`, `main.rs`, and program-specific error types
+- If you are unsure whether something is "transport-layer", ask: does it touch the network, CLI args, or program lifecycle? If no → it belongs in `crates/shared/`
 
 Under `crates/` you can put programs of all kinds: CLI tools, daemons, web services.
 For web services, assuming service `hello` as an example, follow this structure:
@@ -97,6 +97,7 @@ Available task targets defined in `Taskfile.yml`:
 - `task build` - Build all binaries in release mode
 - `task run` - Run the API locally
 - `task test` - Run all tests with cargo-nextest
+- `task coverage` - Measure service coverage; fails if < 100% line coverage on crates/shared/src/services
 - `task lint` - Run clippy and check formatting
 - `task fmt` - Auto-format all code
 - `task cluster` - Create Kind cluster
@@ -162,11 +163,18 @@ When making changes to services:
 - Core code MUST NEVER contain test-specific functionality or conditionals — only mock repositories should be test-aware
 
 ### Testing
-- Write unit tests frequently as you develop using `task test`
+
+**Coverage requirements:**
+- `crates/shared/src/services/` — **100% line coverage enforced**. `task coverage` fails the build if any service line is uncovered. There are no exceptions; write the test before closing the task.
+- `crates/shared/src/repositories/` — no coverage requirement. Repository implementations are integration-tested against a real data source, not unit-tested.
+- Individual program crates — no coverage requirement. Handlers and CLI glue are validated via e2e tests.
+
+**Rules:**
+- Write unit tests as you develop; run `task test` continuously
 - Place unit tests in the same file as the code under test, inside a `#[cfg(test)]` module
 - Place integration tests in `tests/` at the crate root
-- Cover unexpected usage and bad data in tests
-- Mock all external dependencies in unit tests via trait injection
+- Cover unexpected usage and bad data in service tests
+- Mock all repositories in service unit tests via trait injection (`mockall`)
 
 ### Data models
 - Reuse data models from stable upstream APIs only when they correctly represent the data being handled
@@ -245,6 +253,7 @@ You can exec into the dev/test container via: `kubectl exec -n default -it deplo
 Here is how you validate your changes:
 - once the change is ready, ensure `task lint` passes
 - then, ensure your code passes `task test`
+- then, ensure service coverage is 100%: `task coverage` (fails if any service line is uncovered)
 - then, ensure your code passes the e2e suite: `task verify-all`
 
 
