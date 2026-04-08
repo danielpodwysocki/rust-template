@@ -5,3 +5,5 @@
 //   repositories/<RepositoryName>/models.rs   — data models
 //   repositories/<RepositoryName>/mock.rs     — mockall mock for unit tests
 //   repositories/<RepositoryName>/postgres.rs — production implementation
+
+pub mod greeting;

@@ -1,3 +1,4 @@
 resources:
   - deployment.yaml
   - dev-tooling.yaml
+  - web-deployment.yaml

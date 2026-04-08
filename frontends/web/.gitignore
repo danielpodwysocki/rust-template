@@ -1,0 +1,14 @@
+# Nuxt generated files
+.nuxt/
+.output/
+.nitro/
+.cache/
+
+# Dependencies
+node_modules/
+
+# Test coverage
+coverage/
+
+# Build artifacts
+dist/

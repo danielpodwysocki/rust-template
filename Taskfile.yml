@@ -64,9 +64,32 @@ tasks:
       - kind delete cluster --name danielpodwysocki
 
   test:
-    desc: Run all tests with cargo-nextest
+    desc: Run all tests (Rust + frontend unit tests)
     cmds:
       - cargo nextest run
+      - npm --prefix frontends/web ci
+      - npm --prefix frontends/web run test
+
+  install-frontend:
+    desc: Install frontend npm dependencies
+    cmds:
+      - npm --prefix frontends/web ci
+
+  test-frontend:
+    desc: Run frontend unit tests with vitest
+    cmds:
+      - npm --prefix frontends/web ci
+      - npm --prefix frontends/web run test
+
+  coverage-frontend:
+    desc: Measure frontend coverage; fails if below 100%
+    cmds:
+      - npm --prefix frontends/web run coverage
+
+  test-e2e-frontend:
+    desc: Run frontend e2e tests with Playwright
+    cmds:
+      - npm --prefix frontends/web run test:e2e
 
   coverage:
     desc: Enforce 100% line coverage on crates/shared/src/services (fails if any line uncovered)
@@ -77,10 +100,11 @@ tasks:
           --fail-under-lines 100
 
   lint:
-    desc: Run clippy and check formatting
+    desc: Run clippy, check formatting, and typecheck frontend
     cmds:
       - cargo clippy -- -D warnings
       - cargo fmt --check
+      - npm --prefix frontends/web run lint
 
   fmt:
     desc: Auto-format all code

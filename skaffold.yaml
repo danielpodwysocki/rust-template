@@ -11,6 +11,13 @@ build:
         manual:
           - src: "crates/**/*.rs"
             dest: /app/source/crates
+    - image: web
+      docker:
+        dockerfile: images/web.containerfile
+      sync:
+        manual:
+          - src: "frontends/web/**/*.{vue,ts}"
+            dest: /app
 manifests:
   kustomize:
     paths:
@@ -20,3 +27,7 @@ portForward:
     resourceName: rust-template
     port: 3000
     localPort: 3000
+  - resourceType: deployment
+    resourceName: web
+    port: 3001
+    localPort: 3001

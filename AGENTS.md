@@ -81,11 +81,11 @@ The shared crate is the home for all reusable business logic and data access. Ev
 
 #### Services
 
-(No shared services yet — add entries here as services are created)
+- **GreetingService** (`crates/shared/src/services/greeting.rs`) — returns a greeting via repository injection
 
 #### Repositories
 
-(No repositories yet — add entries here as repositories are created)
+- **GreetingRepository** (`crates/shared/src/repositories/greeting/`) — trait + static implementation returning a hardcoded greeting
 
 
 ## Tools available
@@ -96,14 +96,18 @@ Available task targets defined in `Taskfile.yml`:
 - `task dev` - Start development environment with Skaffold
 - `task build` - Build all binaries in release mode
 - `task run` - Run the API locally
-- `task test` - Run all tests with cargo-nextest
+- `task test` - Run all tests (Rust + frontend unit tests)
 - `task coverage` - Measure service coverage; fails if < 100% line coverage on crates/shared/src/services
-- `task lint` - Run clippy and check formatting
+- `task lint` - Run clippy, check formatting, and typecheck frontend
 - `task fmt` - Auto-format all code
 - `task cluster` - Create Kind cluster
 - `task cleanup` - Delete Kind cluster
 - `task docker-build` - Build container image locally
 - `task project-init` - Initialize project by replacing rust-template with current directory name
+- `task install-frontend` - Install frontend npm dependencies
+- `task test-frontend` - Run frontend unit tests (vitest)
+- `task coverage-frontend` - Measure frontend coverage; fails if below 100%
+- `task test-e2e-frontend` - Run frontend e2e tests (Playwright)
 
 
 The environment is managed by Nix flakes (defined in `flake.nix` at repo root).
@@ -220,6 +224,36 @@ When making changes to services:
   - Allocations in hot paths
   - Large serialization operations
   - Data-intensive queries handling large datasets
+
+
+## Frontend conventions (frontends/web/)
+
+The Nuxt 3 frontend mirrors the Rust backend's service/repository pattern.
+
+### Layer responsibilities
+- **`api/`** — repository layer: Zod schemas + `ofetch` wrappers only. No state, no Vue reactivity.
+- **`composables/`** — service layer: all business logic, independently testable. Call `api/` functions here.
+- **`components/`** — thin UI shells: props-driven, no direct API calls, no composable calls inside child components. Composables are called in pages/parent components; state is passed down as props.
+- **`stores/`** — Pinia stores for global state only; composables for page/component-scoped logic.
+- **`pages/`** — use composables, pass state to components as props.
+
+### TypeScript
+- Strict mode and `noUncheckedIndexedAccess` are enforced.
+- Parse-don't-validate: always `Schema.parse(raw)`, never `raw as SomeType`.
+
+### HTTP proxy
+- Frontend never talks directly to the Rust API; all traffic goes through the Nuxt server proxy (`/backend/**`).
+- The proxy target is `API_BASE_URL` (env var, defaulting to `http://localhost:3000`).
+
+### Testing
+- **100% unit coverage** enforced on `api/`, `composables/`, `components/`, `stores/`. `task coverage-frontend` fails if below threshold.
+- Unit tests live in `tests/unit/`, organised by layer.
+- Components receive all state via props — mount-and-assert tests need no composable mocking.
+- E2e (Playwright): one test per page minimum, covers happy path; no line coverage requirement.
+- Run `task test-frontend` for unit tests, `task test-e2e-frontend` for Playwright.
+
+### Package manager
+- Use `npm` with `npm ci` for reproducible installs.
 
 
 ## How to design APIs
